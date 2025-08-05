@@ -1,0 +1,36 @@
+name: Run notebook on a schedule
+
+on:
+  # Fires every day 06:30 IST  ➜  01:00 UTC
+  schedule:
+    - cron:  '0 1 * * *'
+  workflow_dispatch:        # manual "Run workflow" button
+
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣  Get the repo files
+      - uses: actions/checkout@v4
+
+      # 2️⃣  Install Python
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      # 3️⃣  Install Papermill (runs notebooks head-less)
+      - name: Install deps
+        run: pip install --quiet papermill==2.5.0
+
+      # 4️⃣  Execute the notebook
+      - name: Run the notebook
+        run: |
+          papermill my_notebook.ipynb \
+                   executed/out-${{ github.run_id }}.ipynb
+
+      # 5️⃣  Save the executed copy (downloadable from Actions page)
+      - uses: actions/upload-artifact@v3
+        with:
+          name: executed-notebook
+          path: executed/
