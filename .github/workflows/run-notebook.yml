@@ -34,3 +34,29 @@ jobs:
         with:
           name: executed-notebook
           path: executed/
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install deps
+        run: pip install --quiet papermill google-cloud-bigquery  # etc.
+
+      # ⭐ 1. Re-create the key file from the secret
+      - name: Write GCP creds to disk
+        run: |
+          echo "${{ secrets.GCP_CREDS }}" > $HOME/gcp-creds.json
+
+      # ⭐ 2. Point Google libs to the file
+      - name: Export GOOGLE_APPLICATION_CREDENTIALS
+        run: echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcp-creds.json" >> $GITHUB_ENV
+
+      # Now run the notebook (Google libs will pick up the env var)
+      - name: Execute notebook
+        run: |
+          papermill my_notebook.ipynb \
+                   executed/out-${{ github.run_id }}.ipynb
